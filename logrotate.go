@@ -26,7 +26,7 @@ func New(logfile string) (*Logrotate, error) {
 	}, nil
 }
 
-// Write implements io.Writer.
+// Write implements io.Writer
 func (self *Logrotate) Write(p []byte) (n int, err error) {
 	self.Lock()
 	defer self.Unlock()
@@ -36,7 +36,7 @@ func (self *Logrotate) Write(p []byte) (n int, err error) {
 	return self.file.Write(bytes.Join(c, []byte(" ")))
 }
 
-// Close implements io.Closer, and closes the current logfile.
+// Close implements io.Closer, and closes the current logfile
 func (self *Logrotate) Close() error {
 	self.Lock()
 	defer self.Unlock()
