@@ -2,10 +2,13 @@ package logrotate
 
 import (
 	"bytes"
+	"io"
 	"os"
 	"sync"
 	"time"
 )
+
+var _ io.WriteCloser = (*Logrotate)(nil)
 
 type Logrotate struct {
 	sync.Mutex
@@ -43,23 +46,27 @@ func New(logfile string, age, num, size int) (*Logrotate, error) {
 }
 
 // Write implements io.Writer
-func (self *Logrotate) Write(p []byte) (n int, err error) {
-	self.Lock()
-	defer self.Unlock()
+func (l *Logrotate) Write(p []byte) (n int, err error) {
+	l.Lock()
+	defer l.Unlock()
 
 	t := []byte(time.Now().UTC().Format(time.RFC3339Nano))
 	c := [][]byte{t, p}
-	return self.file.Write(bytes.Join(c, []byte(" ")))
+	return l.file.Write(bytes.Join(c, []byte(" ")))
 }
 
 // Close implements io.Closer, and closes the current logfile
-func (self *Logrotate) Close() error {
-	self.Lock()
-	defer self.Unlock()
-	if self.file == nil {
+func (l *Logrotate) Close() error {
+	l.Lock()
+	defer l.Unlock()
+	if l.file == nil {
 		return nil
 	}
-	err := self.file.Close()
-	self.file = nil
+	err := l.file.Close()
+	l.file = nil
 	return err
+}
+
+// Rotate close existing log file and create a new one
+func (l *Logrotate) Rotate() {
 }
