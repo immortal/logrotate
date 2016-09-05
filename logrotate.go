@@ -9,11 +9,10 @@ import (
 
 type Logrotate struct {
 	sync.Mutex
-	Age      int
-	Filename string
-	Num      int
-	Size     int
-	file     *os.File
+	Age  int
+	Num  int
+	Size int
+	file *os.File
 }
 
 // New return instance of Logrotate
