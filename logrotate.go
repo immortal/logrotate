@@ -17,15 +17,15 @@ type Logrotate struct {
 }
 
 // New return instance of Logrotate
+// defaults
+// age  86400 rotate every day
+// num  7     files
+// size 0     no limit size
 func New(logfile string, age, num, size int) (*Logrotate, error) {
 	f, err := os.OpenFile(logfile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		return nil, err
 	}
-	// set defaults
-	// age  86400 rotate every day
-	// num  7 files
-	// size 0 no limit size
 	if age == 0 {
 		age = 86400
 	}
