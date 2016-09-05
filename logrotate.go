@@ -13,16 +13,17 @@ var _ io.WriteCloser = (*Logrotate)(nil)
 
 type Logrotate struct {
 	sync.Mutex
-	Age  int
-	Num  int
-	Size int
-	size int64
-	file *os.File
+	Age   time.Duration
+	Num   int
+	Size  int
+	file  *os.File
+	sTime time.Time
+	size  int64
 }
 
 // New return instance of Logrotate
 // defaults
-// age  86400 rotate every day
+// age  86400 rotate every 24h0m0s
 // num  7     files
 // size 0     no limit size
 func New(logfile string, age, num, size int) (*Logrotate, error) {
@@ -30,23 +31,24 @@ func New(logfile string, age, num, size int) (*Logrotate, error) {
 	if err != nil {
 		return nil, err
 	}
-	if age == 0 {
-		age = 86400
+	// set Age
+	Age := 86400 * time.Second
+	if age > 0 {
+		Age = time.Duration(age) * time.Second
 	}
-	if num == 0 {
+	if num <= 0 {
 		num = 7
 	}
+	Size := 1048576
 	if size > 0 {
-		size = size * 1048576
-	} else {
-		// to test
-		size = 1024 * 1024
+		Size = size * 1048576
 	}
 	return &Logrotate{
-		Age:  age,
-		Num:  num,
-		Size: size,
-		file: f,
+		Age:   Age,
+		Num:   num,
+		Size:  Size,
+		file:  f,
+		sTime: time.Now(),
 	}, nil
 }
 
@@ -61,9 +63,13 @@ func (l *Logrotate) Write(p []byte) (n int, err error) {
 
 	writeLen := int64(len(log))
 
-	fmt.Printf("l.size+writeLen = %+v\n", l.size+writeLen)
-	fmt.Printf("l.Size = %+v\n", l.Size)
-	if l.size+writeLen > int64(l.Size) {
+	// rotate based on Age and size
+	if time.Since(l.sTime) >= l.Age {
+		l.sTime = time.Now()
+		if err := l.rotate(); err != nil {
+			return 0, err
+		}
+	} else if l.size+writeLen > int64(l.Size) {
 		if err := l.rotate(); err != nil {
 			return 0, err
 		}
@@ -98,17 +104,8 @@ func (l *Logrotate) Rotate() error {
 }
 
 func (l *Logrotate) rotate() error {
-	if err := l.close(); err != nil {
-		return err
-	}
-	if err := l.openNew(); err != nil {
-		return err
-	}
-	return l.cleanup()
-}
-
-func (l *Logrotate) openNew() error {
 	name := l.file.Name()
+	l.close()
 	// rotate logs
 	for i := l.Num; i >= 0; i-- {
 		logfile := fmt.Sprintf("%s.%d", name, i)
@@ -132,9 +129,5 @@ func (l *Logrotate) openNew() error {
 	}
 	l.file = f
 	l.size = 0
-	return nil
-}
-
-func (l *Logrotate) cleanup() error {
 	return nil
 }
