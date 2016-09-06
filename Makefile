@@ -1,8 +1,11 @@
-.PHONY: all get test cover
+.PHONY: all get test clean cover
 
 GO ?= go
 
 all: test
+
+clean:
+	@rm -rf *.out
 
 get:
 	${GO} get
