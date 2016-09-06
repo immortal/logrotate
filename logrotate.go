@@ -11,6 +11,7 @@ import (
 
 var _ io.WriteCloser = (*Logrotate)(nil)
 
+// Logrotate struct
 type Logrotate struct {
 	sync.Mutex
 	Age   time.Duration

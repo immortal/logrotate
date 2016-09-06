@@ -1,7 +1,6 @@
 package logrotate
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -115,7 +114,6 @@ func TestRotateIfNotEmpty(t *testing.T) {
 	for i := 0; i <= 100; i++ {
 		log.Println(i)
 	}
-	fmt.Printf("dir = %+v\n", dir)
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
 		t.Fatal(err)
