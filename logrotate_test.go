@@ -110,13 +110,17 @@ func TestRotateIfNotEmpty(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	l.Rotate()
 	log.SetOutput(l)
 	for i := 0; i <= 100; i++ {
 		log.Println(i)
 	}
 	fmt.Printf("dir = %+v\n", dir)
-	for {
-
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
 	}
-
+	if len(files) != 2 {
+		t.Errorf("Expecting 2 files got: %v", len(files))
+	}
 }
