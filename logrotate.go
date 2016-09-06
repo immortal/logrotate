@@ -31,15 +31,15 @@ func New(logfile string, age, num, size int) (*Logrotate, error) {
 	if err != nil {
 		return nil, err
 	}
-	// set Age
-	Age := 86400 * time.Second
+	Age := time.Duration(0)
 	if age > 0 {
 		Age = time.Duration(age) * time.Second
 	}
-	if num <= 0 {
+	num--
+	if num < 0 {
 		num = 7
 	}
-	Size := 1048576
+	Size := 0
 	if size > 0 {
 		Size = size * 1048576
 	}
@@ -64,12 +64,12 @@ func (l *Logrotate) Write(p []byte) (n int, err error) {
 	writeLen := int64(len(log))
 
 	// rotate based on Age and size
-	if time.Since(l.sTime) >= l.Age {
+	if l.Age > 0 && time.Since(l.sTime) >= l.Age {
 		l.sTime = time.Now()
 		if err := l.rotate(); err != nil {
 			return 0, err
 		}
-	} else if l.size+writeLen > int64(l.Size) {
+	} else if l.Size > 0 && l.size+writeLen > int64(l.Size) {
 		if err := l.rotate(); err != nil {
 			return 0, err
 		}
@@ -96,13 +96,14 @@ func (l *Logrotate) close() error {
 	return err
 }
 
-// Rotate close existing log file and create a new one
+// Rotate helper function for rotate
 func (l *Logrotate) Rotate() error {
 	l.Lock()
 	defer l.Unlock()
 	return l.rotate()
 }
 
+// rotate close existing log file and create a new one
 func (l *Logrotate) rotate() error {
 	name := l.file.Name()
 	l.close()
