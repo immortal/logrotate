@@ -56,33 +56,67 @@ func TestNew(t *testing.T) {
 }
 
 func TestRotate(t *testing.T) {
-	dir, err := ioutil.TempDir("", "TestRotate")
-	if err != nil {
-		t.Error(err)
-	}
-	defer os.RemoveAll(dir) // clean up
-	fmt.Printf("dir = %+v\n", dir)
-
 	var testRotate = []struct {
 		args     []int
 		expected int
 	}{
+		{[]int{0, 0, 0}, 1},
 		{[]int{0, 0, 1}, 1},
+		{[]int{1, 1, 0}, 2},
+		{[]int{1, 0, 0}, 4},
+		{[]int{1, 3, 0}, 4},
 	}
 
-	tmplog := filepath.Join(dir, "test.log")
 	for _, a := range testRotate {
-		// TODO
-		fmt.Printf("a = %+v\n", a)
-		os.RemoveAll(dir)
-		l, err := New(tmplog, 1, 1, 0)
+		dir, err := ioutil.TempDir("", "TestRotate")
+		if err != nil {
+			t.Error(err)
+		}
+		tmplog := filepath.Join(dir, "test.log")
+		l, err := New(tmplog, a.args[0], a.args[1], a.args[2])
 		if err != nil {
 			t.Error(err)
 		}
 		log.SetOutput(l)
-		for i := 0; i <= 10; i++ {
+		for i := 0; i <= 5; i++ {
 			time.Sleep(500 * time.Millisecond)
 			log.Println(i)
 		}
+		files, err := ioutil.ReadDir(dir)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(files) != a.expected {
+			os.RemoveAll(dir)
+			t.Fatalf("Expecting %v got %v", a.expected, len(files))
+		}
+		os.RemoveAll(dir)
 	}
+}
+
+func TestRotateIfNotEmpty(t *testing.T) {
+	dir, err := ioutil.TempDir("", "TestRotateIfNotEmpty")
+	if err != nil {
+		t.Error(err)
+	}
+	defer os.RemoveAll(dir)
+	tmplog := filepath.Join(dir, "test.log")
+	d1 := []byte("not\nempty\n")
+	err = ioutil.WriteFile(tmplog, d1, 0644)
+	if err != nil {
+		t.Error(err)
+	}
+	l, err := New(tmplog, 0, 0, 0)
+	if err != nil {
+		t.Error(err)
+	}
+	log.SetOutput(l)
+	for i := 0; i <= 100; i++ {
+		log.Println(i)
+	}
+	fmt.Printf("dir = %+v\n", dir)
+	for {
+
+	}
+
 }
