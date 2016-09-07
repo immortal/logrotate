@@ -1,6 +1,7 @@
 package logrotate
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -93,8 +94,8 @@ func TestRotate(t *testing.T) {
 	}
 }
 
-func TestRotateIfNotEmpty(t *testing.T) {
-	dir, err := ioutil.TempDir("", "TestRotateIfNotEmpty")
+func TestRotateRotate(t *testing.T) {
+	dir, err := ioutil.TempDir("", "TestRotateRotate")
 	if err != nil {
 		t.Error(err)
 	}
@@ -109,6 +110,7 @@ func TestRotateIfNotEmpty(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	fmt.Printf("dir = %+v\n", dir)
 	l.Rotate()
 	log.SetOutput(l)
 	for i := 0; i <= 100; i++ {
@@ -120,5 +122,13 @@ func TestRotateIfNotEmpty(t *testing.T) {
 	}
 	if len(files) != 2 {
 		t.Errorf("Expecting 2 files got: %v", len(files))
+	}
+	l.Rotate()
+	files, err = ioutil.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 3 {
+		t.Errorf("Expecting 3 files got: %v", len(files))
 	}
 }
