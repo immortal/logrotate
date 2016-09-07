@@ -1,7 +1,6 @@
 package logrotate
 
 import (
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -110,7 +109,6 @@ func TestRotateRotate(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	fmt.Printf("dir = %+v\n", dir)
 	l.Rotate()
 	log.SetOutput(l)
 	for i := 0; i <= 100; i++ {
