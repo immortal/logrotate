@@ -1,6 +1,7 @@
 package logrotate
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -96,7 +97,7 @@ func TestRotate(t *testing.T) {
 func TestRotateRotate(t *testing.T) {
 	dir, err := ioutil.TempDir("", "TestRotateRotate")
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 	defer os.RemoveAll(dir)
 	tmplog := filepath.Join(dir, "test.log")
@@ -128,5 +129,64 @@ func TestRotateRotate(t *testing.T) {
 	}
 	if len(files) != 3 {
 		t.Errorf("Expecting 3 files got: %v", len(files))
+	}
+}
+
+func TestNewRotateAge(t *testing.T) {
+	dir, err := ioutil.TempDir("", "TestRotateAge")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+	tmplog := filepath.Join(dir, "test.log")
+	d1 := []byte("not\nempty\n")
+	err = ioutil.WriteFile(tmplog, d1, 0644)
+	if err != nil {
+		t.Error(err)
+	}
+	myTime, _ := time.Parse(time.RFC822, "01 Jan 01 00:00 UTC")
+	err = os.Chtimes(tmplog, myTime, myTime)
+	if err != nil {
+		fmt.Println(err)
+	}
+	_, err = New(tmplog, 86400, 0, 0)
+	if err != nil {
+		t.Error(err)
+	}
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 2 {
+		t.Errorf("Expecting 2 files got: %v", len(files))
+	}
+}
+
+func TestNewRotateSize(t *testing.T) {
+	dir, err := ioutil.TempDir("", "TestRotateSize")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+	tmplog := filepath.Join(dir, "test.log")
+	d1 := []byte("not\nempty\n")
+	err = ioutil.WriteFile(tmplog, d1, 0644)
+	if err != nil {
+		t.Error(err)
+	}
+	err = os.Truncate(tmplog, 1048577)
+	if err != nil {
+		fmt.Println(err)
+	}
+	_, err = New(tmplog, 0, 0, 1)
+	if err != nil {
+		t.Error(err)
+	}
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(files) != 2 {
+		t.Errorf("Expecting 2 files got: %v", len(files))
 	}
 }

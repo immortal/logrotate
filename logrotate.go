@@ -44,13 +44,26 @@ func New(logfile string, age, num, size int) (*Logrotate, error) {
 	if size > 0 {
 		Size = size * 1048576
 	}
-	return &Logrotate{
+	lg := &Logrotate{
 		Age:   Age,
 		Num:   num,
 		Size:  Size,
 		file:  f,
 		sTime: time.Now(),
-	}, nil
+	}
+	// rotate if needed
+	if i, err := lg.file.Stat(); err == nil {
+		if lg.Age > 0 && time.Since(i.ModTime()) >= lg.Age {
+			if err := lg.rotate(); err != nil {
+				return nil, err
+			}
+		} else if lg.Size > 0 && i.Size() > int64(lg.Size) {
+			if err := lg.rotate(); err != nil {
+				return nil, err
+			}
+		}
+	}
+	return lg, nil
 }
 
 // Write implements io.Writer
