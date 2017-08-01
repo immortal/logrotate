@@ -17,10 +17,10 @@ type Logrotate struct {
 	Age       time.Duration
 	Num       int
 	Size      int
+	Timestamp bool
 	file      *os.File
 	sTime     time.Time
 	size      int64
-	timestamp bool
 }
 
 // New return instance of Logrotate
@@ -50,9 +50,9 @@ func New(logfile string, age, num, size int, timestamp bool) (*Logrotate, error)
 		Age:       Age,
 		Num:       num,
 		Size:      Size,
+		Timestamp: timestamp,
 		file:      f,
 		sTime:     time.Now(),
-		timestamp: timestamp,
 	}
 	// rotate if needed
 	if i, err := lg.file.Stat(); err == nil {
@@ -76,7 +76,7 @@ func (l *Logrotate) Write(p []byte) (n int, err error) {
 
 	var log []byte
 
-	if l.timestamp {
+	if l.Timestamp {
 		t := []byte(time.Now().UTC().Format(time.RFC3339Nano))
 		c := [][]byte{t, p}
 		log = bytes.Join(c, []byte(" "))

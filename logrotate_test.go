@@ -39,7 +39,7 @@ func TestNew(t *testing.T) {
 	}
 
 	for _, a := range testArgs {
-		l, err := New(tmpfile.Name(), a.args[0], a.args[1], a.args[2])
+		l, err := New(tmpfile.Name(), a.args[0], a.args[1], a.args[2], false)
 		if err != nil {
 			t.Error(err)
 		}
@@ -73,7 +73,7 @@ func TestRotate(t *testing.T) {
 			t.Error(err)
 		}
 		tmplog := filepath.Join(dir, "test.log")
-		l, err := New(tmplog, a.args[0], a.args[1], a.args[2])
+		l, err := New(tmplog, a.args[0], a.args[1], a.args[2], false)
 		if err != nil {
 			t.Error(err)
 		}
@@ -106,7 +106,7 @@ func TestRotateRotate(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	l, err := New(tmplog, 0, 0, 0)
+	l, err := New(tmplog, 0, 0, 0, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -149,7 +149,7 @@ func TestNewRotateAge(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	_, err = New(tmplog, 86400, 0, 0)
+	_, err = New(tmplog, 86400, 0, 0, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -178,7 +178,7 @@ func TestNewRotateSize(t *testing.T) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	_, err = New(tmplog, 0, 0, 1)
+	_, err = New(tmplog, 0, 0, 1, false)
 	if err != nil {
 		t.Error(err)
 	}
@@ -188,5 +188,37 @@ func TestNewRotateSize(t *testing.T) {
 	}
 	if len(files) != 2 {
 		t.Errorf("Expecting 2 files got: %v", len(files))
+	}
+}
+
+func TestTimestamp(t *testing.T) {
+	dir, err := ioutil.TempDir("", "TestTimestamp")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.RemoveAll(dir)
+	tmplog := filepath.Join(dir, "test.log")
+	l, err := New(tmplog, 0, 0, 1, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n, err := l.Write([]byte("mati"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n < 30 {
+		t.Errorf("Expexting n > 30 got: %v", n)
+	}
+	l.Close()
+	l, err = New(tmplog, 0, 0, 1, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	n, err = l.Write([]byte("mati"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n != 4 {
+		t.Errorf("Expexting n = 4 got: %v", n)
 	}
 }
