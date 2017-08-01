@@ -14,12 +14,13 @@ var _ io.WriteCloser = (*Logrotate)(nil)
 // Logrotate struct
 type Logrotate struct {
 	sync.Mutex
-	Age   time.Duration
-	Num   int
-	Size  int
-	file  *os.File
-	sTime time.Time
-	size  int64
+	Age       time.Duration
+	Num       int
+	Size      int
+	file      *os.File
+	sTime     time.Time
+	size      int64
+	timestamp bool
 }
 
 // New return instance of Logrotate
@@ -27,7 +28,8 @@ type Logrotate struct {
 // age  86400 rotate every 24h0m0s
 // num  7     files
 // size 0     no limit size
-func New(logfile string, age, num, size int) (*Logrotate, error) {
+// timestamp false
+func New(logfile string, age, num, size int, timestamp bool) (*Logrotate, error) {
 	f, err := os.OpenFile(logfile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
 	if err != nil {
 		return nil, err
@@ -45,11 +47,12 @@ func New(logfile string, age, num, size int) (*Logrotate, error) {
 		Size = size * 1048576
 	}
 	lg := &Logrotate{
-		Age:   Age,
-		Num:   num,
-		Size:  Size,
-		file:  f,
-		sTime: time.Now(),
+		Age:       Age,
+		Num:       num,
+		Size:      Size,
+		file:      f,
+		sTime:     time.Now(),
+		timestamp: timestamp,
 	}
 	// rotate if needed
 	if i, err := lg.file.Stat(); err == nil {
@@ -71,9 +74,15 @@ func (l *Logrotate) Write(p []byte) (n int, err error) {
 	l.Lock()
 	defer l.Unlock()
 
-	t := []byte(time.Now().UTC().Format(time.RFC3339Nano))
-	c := [][]byte{t, p}
-	log := bytes.Join(c, []byte(" "))
+	var log []byte
+
+	if l.timestamp {
+		t := []byte(time.Now().UTC().Format(time.RFC3339Nano))
+		c := [][]byte{t, p}
+		log = bytes.Join(c, []byte(" "))
+	} else {
+		log = p
+	}
 
 	writeLen := int64(len(log))
 
@@ -88,6 +97,7 @@ func (l *Logrotate) Write(p []byte) (n int, err error) {
 			return 0, err
 		}
 	}
+
 	n, err = l.file.Write(log)
 	l.size += int64(n)
 	return n, err
