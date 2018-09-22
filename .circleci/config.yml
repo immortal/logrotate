@@ -15,6 +15,7 @@ jobs:
     working_directory: /go/src/github.com/immortal/logrotate
     steps:
       - checkout
+      - run: go get
       - run: go test -race -v
   test-1.11:
     <<: *test-template
